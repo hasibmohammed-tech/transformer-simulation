@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Single-Phase Transformer Master</title>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+:root{--primary:#1e3a8a;--secondary:#2563eb;--bg:#f8fafc;--accent:#d97706;--mut:#64748b;--line:#e2e8f0}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:#1e293b}
+header{background:var(--primary);color:#fff;padding:1.2rem;text-align:center}
+header h1{margin:0;font-size:1.6rem}header p{margin:.3rem 0 0;color:#bfdbfe;font-size:.9rem}
+nav{display:flex;justify-content:center;background:#1e293b;position:sticky;top:0;z-index:9}
+.tab-btn{background:inherit;color:#94a3b8;border:none;padding:1rem 2rem;cursor:pointer;font-size:1.05rem;font-weight:700}
+.tab-btn:hover{color:#fff}.tab-btn.active{color:#fff;border-bottom:4px solid var(--secondary);background:var(--primary)}
+.container{max-width:1100px;margin:2rem auto;padding:0 1rem}
+.tab-content{display:none}.tab-content.active{display:block}
+.card{background:#fff;border-radius:8px;padding:1.5rem;margin-bottom:2rem;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid var(--line)}
+h2{color:var(--primary);border-bottom:2px solid var(--line);padding-bottom:.5rem;margin-top:0}
+.cg{display:flex;gap:1rem;align-items:end;margin-bottom:1rem;flex-wrap:wrap}
+.cg label{display:flex;flex-direction:column;font-size:.75rem;font-weight:700;color:var(--mut);gap:4px;text-transform:uppercase;max-width:100%}
+.cg label.wide{width:100%;max-width:340px}
+input{padding:.5rem .8rem;border-radius:4px;border:1px solid #cbd5e1;font-size:1rem;width:120px}
+input[type=range]{padding:0;width:160px;max-width:100%}
+.cg label.wide input[type=range]{width:100%}
+.modes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem}
+.btn{padding:.5rem 1rem;border-radius:4px;border:1px solid #cbd5e1;background:#fff;color:#334155;font-weight:700;font-size:.95rem;cursor:pointer}
+.btn.on{background:var(--secondary);color:#fff;border-color:var(--secondary)}
+.btn.danger{border-color:#fca5a5;color:#b91c1c}
+.btn.danger.on{background:#dc2626;border-color:#dc2626;color:#fff}
+svg.dg{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:8px}
+canvas{width:100%;display:block;border-radius:8px;background:#0b1220}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-top:1rem}
+.rb{background:#f1f5f9;padding:.5rem 1rem;border-left:4px solid var(--secondary);margin-top:1rem;overflow-x:auto}.rb p{margin:.4rem 0}
+.rb.fault{border-left-color:#dc2626}
+.meters{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:1rem}
+.m{background:#f1f5f9;border-left:4px solid var(--secondary);padding:8px 12px;border-radius:6px}
+.m small{display:block;color:var(--mut);font-size:.7rem;text-transform:uppercase;font-weight:700}.m b{font-size:1.15rem;color:var(--primary)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:.8rem 0}
+.chip{background:#e0e7ff;color:var(--primary);padding:4px 12px;border-radius:999px;font-size:.8rem;font-weight:700}.chip.o{background:#fef3c7;color:#92400e}
+.chip.r{background:#fee2e2;color:#991b1b}
+.flux{fill:none;stroke:#0ea5e9;stroke-width:3;stroke-dasharray:10 8;animation:fl 1.1s linear infinite}
+@keyframes fl{to{stroke-dashoffset:-36}}
+.cf{fill:none;stroke:#f59e0b;stroke-width:3.5;stroke-dasharray:3 12;stroke-linecap:round;animation:cf var(--d,2s) linear infinite;opacity:var(--o,1)}
+.cf.hot{stroke:#ef4444;stroke-width:4.5}
+@keyframes cf{to{stroke-dashoffset:-30}}
+.cap{font-size:.75rem;color:var(--mut);margin:4px 0 0;text-align:center}
+table.cmp{width:100%;border-collapse:collapse;font-size:.85rem;margin:.4rem 0}
+table.cmp th,table.cmp td{padding:6px 6px;border-bottom:1px solid #cbd5e1;text-align:left;vertical-align:top}
+table.cmp th{font-size:.72rem;text-transform:uppercase;color:var(--mut)}
+table.cmp td.bad{color:#b91c1c;font-weight:700}table.cmp td.ok{color:#065f46;font-weight:700}
+/* research log bar */
+.lbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fff;border:1px dashed #94a3b8;border-radius:8px;padding:.6rem .8rem;margin-bottom:1.2rem;font-size:.85rem;color:#334155}
+.lbar b{color:var(--primary)}
+.lbar input{width:120px;padding:.4rem .6rem}
+.lbar .btn{padding:.4rem .8rem;font-size:.85rem}
+.lbar .st{flex-basis:100%;font-size:.8rem;color:var(--mut);min-height:1em}
+.lbar .lnk{background:none;border:none;color:var(--mut);text-decoration:underline;font-size:.75rem;cursor:pointer;padding:0}
+@media(max-width:768px){.g2{grid-template-columns:1fr}.tab-btn{padding:.8rem 1rem;font-size:.9rem}}
+@media(max-width:640px){
+  header{padding:.9rem}header h1{font-size:1.25rem}
+  .container{padding:0 .6rem;margin:1rem auto}
+  .card{padding:1rem;margin-bottom:1.2rem}
+  h2{font-size:1.15rem}
+  .cg{gap:.6rem}
+  input{width:100px}
+  .btn{font-size:.85rem;padding:.5rem .7rem}
+  .meters{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<header><h1>⚡ Single-Phase Transformer Master</h1><p>Live Simulation &amp; Mathematical Analysis</p></header>
+<nav>
+<button class="tab-btn active" onclick="openTab('sim',this)">Page 1: Live Simulation</button>
+<button class="tab-btn" onclick="openTab('calc',this)">Page 2: Math &amp; Calculations</button>
+</nav>
+
+<div class="container">
+<!-- RESEARCH LOG BAR -->
+<div class="lbar">
+<b>Your ID code</b><input id="sid" type="text" placeholder="e.g. S07" autocomplete="off">
+<span>Actions recorded: <b id="lgn">0</b></span>
+<button class="btn on" onclick="submitLog()">Submit log</button>
+<button class="btn" onclick="downloadLog()">Download</button>
+<button class="lnk" onclick="resetLog()">Reset (teacher only)</button>
+<div class="st" id="lgst"></div>
+</div>
+
+<!-- PAGE 1 -->
+<div id="sim" class="tab-content active">
+<div class="card">
+<h2>1. Transformer Operation</h2>
+<div class="modes">
+<button class="btn on" id="m_load" onclick="setMode('load')">Normal Load</button>
+<button class="btn" id="m_open" onclick="setMode('open')">Open Circuit</button>
+<button class="btn danger" id="m_short" onclick="setMode('short')">Short Circuit</button>
+</div>
+<div class="cg">
+<label>V₁ (V)<input id="v1" type="number" value="230" oninput="upd()"></label>
+<label>N₁ (turns)<input id="n1" type="number" value="500" oninput="upd()"></label>
+<label>N₂ (turns)<input id="n2" type="number" value="250" oninput="upd()"></label>
+<label>Rating (kVA)<input id="kva" type="number" value="5" oninput="upd()"></label>
+<label id="lbLoad">Load <span id="ldv">60%</span><input id="ld" type="range" min="0" max="150" value="60" oninput="upd()"></label>
+<label id="lbI0" style="display:none">No-load I₀ (% of rated)<input id="i0p" type="number" value="3" step=".5" min=".1" oninput="upd()"></label>
+<label id="lbZ" style="display:none">%Z (impedance)<input id="zp" type="number" value="5" step=".5" min=".5" oninput="upd()"></label>
+</div>
+<svg id="tr" class="dg" viewBox="0 0 800 400"></svg>
+<div class="chips" id="chips"></div>
+<div class="meters" id="meters"></div>
+<div class="g2">
+<div><canvas id="wave" data-h="230" style="height:230px"></canvas><p class="cap">V₁ (cyan) · V₂ (orange) · Flux Φ (green, dashed) · I₁ (yellow, drawn to scale: rated current = 45% of height)</p></div>
+<div><canvas id="ph" data-h="230" style="height:230px"></canvas><p class="cap">Phasors: V₁, E₁, Φ, I₀ and current I₁</p></div>
+</div>
+</div>
+
+<div class="card">
+<h2>2. Efficiency vs Load</h2>
+<div class="cg">
+<label>Rating (kVA)<input id="ek" type="number" value="5"></label>
+<label>Iron loss (W)<input id="ei" type="number" value="40"></label>
+<label>Full-load Cu loss (W)<input id="ec" type="number" value="100"></label>
+<label>Power factor<input id="ep" type="number" value="0.8" step=".05"></label>
+</div>
+<canvas id="eff" data-h="260" style="height:260px"></canvas>
+<p class="cap">White dot = current load (slider in Card 1) · Yellow line = maximum efficiency (Cu loss = Iron loss) · Default values match the transformer in Card 3</p>
+</div>
+
+<div class="card">
+<h2>3. Open Circuit (OC) &amp; Short Circuit (SC) Test</h2>
+<div class="modes">
+<button class="btn on" id="t_oc" onclick="setTest('oc')">OC Test (LV side energised)</button>
+<button class="btn" id="t_sc" onclick="setTest('sc')">SC Test (HV side energised)</button>
+<button class="btn danger" id="t_scf" onclick="setTest('scf')">⚠ SC wiring at FULL voltage</button>
+</div>
+<div class="cg">
+<label>Rating (kVA)<input id="tk" type="number" value="5" oninput="tupd()"></label>
+<label>HV (V)<input id="th" type="number" value="230" oninput="drawTest();tupd()"></label>
+<label>LV (V)<input id="tl" type="number" value="115" oninput="drawTest();tupd()"></label>
+<label>Iron loss (W)<input id="tpi" type="number" value="40" oninput="tupd()"></label>
+<label>FL Cu loss (W)<input id="tpc" type="number" value="100" oninput="tupd()"></label>
+<label>%Z<input id="tz" type="number" value="5" step=".5" oninput="drawTest();tupd()"></label>
+<label>I₀ (% rated)<input id="ti" type="number" value="3" step=".5" oninput="tupd()"></label>
+</div>
+<div class="cg" id="tsrow"><label class="wide"><span id="tsl"></span><input id="ts" type="range" min="0" max="120" value="100" oninput="tupd()"></label></div>
+<svg id="tsvg" class="dg" viewBox="0 0 800 400"></svg>
+<div class="chips" id="tchips"></div>
+<div class="meters" id="tmeters"></div>
+<div class="g2">
+<div><canvas id="tch" data-h="240" style="height:240px"></canvas><p class="cap" id="tcap"></p></div>
+<div class="rb" id="tres" style="margin-top:0"></div>
+</div>
+</div>
+</div>
+
+<!-- PAGE 2 -->
+<div id="calc" class="tab-content">
+<div class="card">
+<h2>1. Transformation Ratio &amp; Currents</h2>
+<p>$$K=\frac{V_2}{V_1}=\frac{N_2}{N_1}=\frac{I_1}{I_2}$$</p>
+<p>$$S=V_1I_1=V_2I_2$$</p>
+<div class="cg">
+<label>V₁ (V)<input id="a1" type="number" value="230" oninput="c1()"></label>
+<label>N₁<input id="a2" type="number" value="500" oninput="c1()"></label>
+<label>N₂<input id="a3" type="number" value="250" oninput="c1()"></label>
+<label>Rating (kVA)<input id="a4" type="number" value="5" oninput="c1()"></label>
+</div>
+<div class="rb" id="o1"></div>
+</div>
+
+<div class="card">
+<h2>2. EMF Equation</h2>
+<p>$$E=4.44\,f\,N\,\Phi_m=4.44\,f\,N\,B_m A_i$$</p>
+<div class="cg">
+<label>Frequency f (Hz)<input id="b1" type="number" value="50" oninput="c2()"></label>
+<label>Turns N<input id="b2" type="number" value="500" oninput="c2()"></label>
+<label>B<sub>m</sub> (T)<input id="b3" type="number" value="1.2" step=".1" oninput="c2()"></label>
+<label>Core area (cm²)<input id="b4" type="number" value="50" oninput="c2()"></label>
+</div>
+<div class="rb" id="o2"></div>
+</div>
+
+<div class="card">
+<h2>3. Efficiency &amp; Voltage Regulation</h2>
+<p>$$\eta=\frac{x\,S\cos\phi}{x\,S\cos\phi+P_i+x^2P_{cu}}\times100,\qquad x_{\eta max}=\sqrt{\frac{P_i}{P_{cu}}}$$</p>
+<p>$$VR\approx x\,(R_{pu}\cos\phi\pm X_{pu}\sin\phi)\times100$$</p>
+<div class="cg">
+<label>Rating (kVA)<input id="c1k" type="number" value="100" oninput="c3()"></label>
+<label>Iron loss (W)<input id="c2k" type="number" value="500" oninput="c3()"></label>
+<label>FL Cu loss (W)<input id="c3k" type="number" value="1500" oninput="c3()"></label>
+<label>Load (%)<input id="c4k" type="number" value="80" oninput="c3()"></label>
+<label>Power factor<input id="c5k" type="number" value="0.8" step=".05" oninput="c3()"></label>
+<label>%R<input id="c6k" type="number" value="1.5" step=".1" oninput="c3()"></label>
+<label>%X<input id="c7k" type="number" value="4" step=".1" oninput="c3()"></label>
+</div>
+<div class="rb" id="o3"></div>
+</div>
+
+<div class="card">
+<h2>4. OC &amp; SC Test (Equivalent Circuit)</h2>
+<p>$$\cos\phi_0=\frac{W_0}{V_0I_0},\quad R_0=\frac{V_0}{I_w},\quad X_0=\frac{V_0}{I_\mu},\quad R_e=\frac{W_{sc}}{I_{sc}^2},\quad X_e=\sqrt{Z_e^2-R_e^2}$$</p>
+<div class="cg">
+<label>OC: V₀ (V)<input id="d1" type="number" value="230" oninput="c4()"></label>
+<label>OC: I₀ (A)<input id="d2" type="number" value="1" step=".1" oninput="c4()"></label>
+<label>OC: W₀ (W)<input id="d3" type="number" value="70" oninput="c4()"></label>
+<label>SC: V<sub>sc</sub> (V)<input id="d4" type="number" value="20" oninput="c4()"></label>
+<label>SC: I<sub>sc</sub> (A)<input id="d5" type="number" value="10" oninput="c4()"></label>
+<label>SC: W<sub>sc</sub> (W)<input id="d6" type="number" value="120" oninput="c4()"></label>
+</div>
+<div class="rb" id="o4"></div>
+</div>
+</div>
+</div>
+
+<script>
+/* ===== Research log settings =====
+   Paste the Google Apps Script web app URL between the quotes.
+   Leave it empty to use the Download button only. */
+const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx3Iqg3Iye2p7tUqelruLtjC36FA33xFAzls9h57kSUEb34Ia8zQCz-eMlImVwZdLgZ/exec';
+
+const $=id=>document.getElementById(id),num=id=>+$(id).value||0;
+const fmt=n=>Number.isFinite(n)?n.toLocaleString(undefined,{maximumFractionDigits:2}):'—';
+const rows=(id,r)=>$(id).innerHTML=r.map(x=>`<p><b>${x[0]}:</b> ${x[1]}</p>`).join('');
+const mets=(id,r)=>$(id).innerHTML=r.map(x=>`<div class="m"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
+const W=(p,c='#334155')=>`<polyline points="${p.join(' ')}" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>`;
+const dot=(x,y)=>`<circle cx="${x}" cy="${y}" r="6" fill="#2563eb" stroke="#fff" stroke-width="1.5"/>`;
+/* text scale: diagrams shrink on phones, so their labels are enlarged */
+let TS=1;const calcTS=()=>(window.innerWidth||800)<640?1.45:1;TS=calcTS();
+const tx=(x,y,t,id,c='#0f172a',sz=15,anc='middle')=>`<text ${id?`id="${id}" `:''}x="${x}" y="${y}" fill="${c}" font-size="${(sz*TS).toFixed(1)}" font-weight="700" text-anchor="${anc}">${t}</text>`;
+const lab=(x,y,t,anc='middle',c='#64748b',sz=11)=>tx(x,y,t,'',c,sz,anc);
+const setT=(id,t)=>{const e=$(id);if(e)e.textContent=t};
+let mode='load',tmode='oc',tab='sim';
+
+/* ================= RESEARCH LOG ================= */
+const LKEY='txsim_log_v2';
+const newLog=()=>({session:Date.now().toString(36)+Math.random().toString(36).slice(2,7),t0:Date.now(),sid:'',sent:0,rows:[]});
+let LOG=newLog();
+try{const b=JSON.parse(localStorage.getItem(LKEY)||'null');if(b&&Array.isArray(b.rows))LOG=b}catch(e){}
+function saveLog(){try{localStorage.setItem(LKEY,JSON.stringify(LOG))}catch(e){}}
+function lg(ev,target='',value=''){
+  LOG.rows.push({t:Date.now()-LOG.t0,iso:new Date().toISOString(),ev,target,value:String(value).slice(0,300),mode,tmode,tab});
+  saveLog();setT('lgn',LOG.rows.length);
+}
+const lgst=t=>setT('lgst',t);
+async function submitLog(){
+  const sid=$('sid').value.trim();
+  if(!sid){lgst('Please type your ID code first.');$('sid').focus();return}
+  LOG.sid=sid;lg('submit','',LOG.rows.length);
+  if(!LOG_ENDPOINT){lgst('Log server not set on this copy. Please use Download.');return}
+  const part=LOG.rows.slice(LOG.sent||0);
+  lgst('Sending '+part.length+' actions…');
+  try{
+    await fetch(LOG_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({sid,session:LOG.session,rows:part})});
+    LOG.sent=LOG.rows.length;saveLog();
+    lgst('Sent ✓ Thank you. ('+part.length+' actions)');
+  }catch(e){lgst('Not sent. Turn on internet and press Submit again.')}
+}
+function downloadLog(){
+  const sid=$('sid').value.trim()||'noID';
+  const esc=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const head=['student_id','session','t_ms','time_iso','event','target','value','sim_mode','test_mode','page'];
+  const csv=[head.join(',')].concat(LOG.rows.map(r=>[sid,LOG.session,r.t,r.iso,r.ev,r.target,r.value,r.mode,r.tmode,r.tab].map(esc).join(','))).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='txlog_'+sid+'_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
+  lg('download','',LOG.rows.length);lgst('Downloaded '+LOG.rows.length+' actions.');
+}
+function resetLog(){
+  if(!confirm('Clear the log on this phone? Do this only before a new student uses it.'))return;
+  LOG=newLog();saveLog();$('sid').value='';setT('lgn',0);lgst('Log cleared.');lg('start','device',devInfo());
+}
+const devInfo=()=>`${screen.width}x${screen.height} dpr${window.devicePixelRatio||1} | ${navigator.userAgent}`;
+document.addEventListener('change',e=>{
+  const t=e.target;if(!t||t.tagName!=='INPUT'||!t.id)return;
+  if(t.id==='sid'){LOG.sid=t.value.trim();saveLog();lg('id','sid',t.value.trim());return}
+  lg('set',t.id,t.value);
+});
+document.addEventListener('visibilitychange',()=>lg(document.hidden?'leave_page':'return_page'));
+
+/* ================= PAGE 1 · CARD 1 ================= */
+function coil(x,cls){
+  let s=`<g class="${cls}"><rect x="${x-54}" y="145" width="108" height="130" rx="6" fill="url(#cu)" stroke="#7c2d12" stroke-width="1.5"/>`;
+  for(let k=0;k<13;k++)s+=`<path d="M${x-54} ${155+k*10}L${x+54} ${148+k*10}" stroke="#7c2d12" stroke-opacity=".5" stroke-width="1.5"/>`;
+  return s+'</g>';
+}
+function drawTr(){
+  const open=mode==='open',sh=mode==='short';
+  let o=`<defs>
+<linearGradient id="cu" x1="0" x2="1"><stop offset="0" stop-color="#b45309"/><stop offset=".5" stop-color="#f59e0b"/><stop offset="1" stop-color="#b45309"/></linearGradient>
+<linearGradient id="st" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cbd5e1"/><stop offset=".5" stop-color="#e2e8f0"/><stop offset="1" stop-color="#94a3b8"/></linearGradient></defs>`+
+  `<path fill-rule="evenodd" fill="url(#st)" stroke="#64748b" stroke-width="1.5" d="M220 70H580V350H220Z M300 130V290H500V130Z"/>`+
+  coil(260,'cp')+coil(540,'cs')+
+  W(['206,165','120,165'])+W(['206,255','120,255'])+W(['594,165','680,165'])+W(['594,255','680,255'])+
+  W(['120,165','70,165','70,184'])+W(['120,255','70,255','70,236'])+
+  `<circle cx="70" cy="210" r="26" fill="#fff" stroke="#334155" stroke-width="2.5"/><path d="M57 210q6.5-14 13 0t13 0" fill="none" stroke="#2563eb" stroke-width="2.5"/>`;
+  if(open){
+    o+=W(['680,165','705,165'])+W(['680,255','705,255'])+
+    `<circle cx="705" cy="165" r="5" fill="#fff" stroke="#334155" stroke-width="2"/><circle cx="705" cy="255" r="5" fill="#fff" stroke="#334155" stroke-width="2"/>`;
+  }else{
+    o+=W(['680,165','730,165','730,188'])+W(['680,255','730,255','730,232']);
+  }
+  if(sh)o+=`<polyline points="680,165 700,165 700,255 680,255" fill="none" stroke="#dc2626" stroke-width="5" stroke-linejoin="round"/>`+tx(700,216,'⚡','','#f59e0b',22);
+  o+=`<circle id="lamp" cx="730" cy="210" r="22" fill="#fde047" stroke="#334155" stroke-width="2.5"/><path d="M718 222L742 198M718 198L742 222" stroke="#92400e" stroke-width="2"/>`+
+  dot(120,165)+dot(120,255)+dot(680,165)+dot(680,255)+
+  tx(120,150,'P₁')+tx(120,282,'P₂')+tx(680,150,'S₁')+tx(680,282,'S₂')+
+  tx(400,215,'Φ','','#0369a1',24)+tx(260,385,'','n1t','#b45309',16)+tx(540,385,'','n2t','#b45309',16)+
+  tx(95,320,'','v1t','#0369a1',16)+tx(705,320,'','v2t','#c2410c',16)+tx(735,282,'LOAD','','#64748b',12)+
+  /* in a secondary short at rated V1, much of V1 drops across leakage impedance, so core flux falls (about half) */
+  `<path class="flux" style="opacity:${sh?.45:1}" d="M260 100H540V320H260Z"/>`;
+  if(open)o+=tx(792,40,'OPEN CIRCUIT (no load)','','#2563eb',14,'end');
+  if(sh)o+=tx(792,40,'SHORT CIRCUIT FAULT (rated V₁ applied)','','#dc2626',14,'end');
+  $('tr').innerHTML=o;
+}
+function setMode(m){
+  mode=m;
+  ['load','open','short'].forEach(k=>$('m_'+k).classList.toggle('on',k===m));
+  $('lbLoad').style.display=m==='load'?'':'none';
+  $('lbI0').style.display=m==='open'?'':'none';
+  $('lbZ').style.display=m==='short'?'':'none';
+  drawTr();upd();lg('sim_mode',m);
+}
+function upd(){
+  const V1=num('v1'),N1=num('n1')||1,N2=num('n2'),kva=num('kva'),L=+$('ld').value;
+  $('ldv').textContent=L+'%';
+  const K=N2/N1,V2o=V1*K,I1r=V1?kva*1000/V1:0,I2r=V2o?kva*1000/V2o:0;
+  const ratio=`<span class="chip o">N₁ : N₂ = ${fmt(N1)} : ${fmt(N2)}</span>`;
+  let m,c;
+  if(mode==='load'){
+    const I2=I2r*L/100,I1=I2*K;
+    m=[['Secondary V₂',fmt(V2o)+' V'],['Primary I₁',fmt(I1)+' A'],['Secondary I₂',fmt(I2)+' A'],['Load power',fmt(V2o*I2/1000)+' kVA'],['Ratio K',fmt(K)]];
+    c=`<span class="chip">${K>1?'Step-up':K<1?'Step-down':'Isolation 1:1'}</span>`+ratio+'<span class="chip o">Ideal model: V₂ stays constant, no-load current ignored</span>'+(L>100?'<span class="chip r">Overloaded</span>':'');
+  }else if(mode==='open'){
+    const i0p=num('i0p'),I0=I1r*i0p/100,c0=.2;
+    m=[['Open-circuit V₂',fmt(V2o)+' V'],['No-load I₁ = I₀',fmt(I0)+' A'],['Secondary I₂','0 A'],['No-load power W₀ ≈',fmt(V1*I0*c0)+' W'],['I<sub>w</sub> / I<sub>μ</sub>',fmt(I0*c0)+' / '+fmt(I0*Math.sqrt(1-c0*c0))+' A']];
+    c=`<span class="chip" style="background:#dbeafe;color:#1d4ed8">Open circuit (no load)</span>`+ratio+`<span class="chip">I₀ = ${fmt(i0p)}% of rated · cosφ₀ ≈ 0.2</span>`;
+  }else{
+    const Z=Math.max(num('zp'),.01)/100,Isc1=I1r/Z,Isc2=I2r/Z;
+    m=[['Applied V₁',fmt(V1)+' V (rated)'],['Secondary V₂','0 V'],['Fault current I₁',fmt(Isc1)+' A'],['Fault current I₂',fmt(Isc2)+' A'],['× rated current',fmt(1/Z)+'×'],['Heating (I²R)','≈ '+fmt(1/(Z*Z))+'× rated']];
+    c=`<span class="chip r">⚠ Short circuit fault at rated voltage</span><span class="chip o">Protection must trip at once</span><span class="chip o">Core flux falls to about half</span>`+ratio;
+  }
+  mets('meters',m);$('chips').innerHTML=c;
+  setT('n1t','N₁ = '+fmt(N1));setT('n2t','N₂ = '+fmt(N2));
+  setT('v1t','V₁ = '+fmt(V1)+' V');setT('v2t','V₂ = '+fmt(mode==='short'?0:V2o)+' V');
+  $('lamp').setAttribute('fill-opacity',mode==='load'?Math.min(1,.15+.85*L/100):.1);
+}
+
+/* ================= PAGE 1 · CARD 3: OC / SC TEST ================= */
+function setTest(m){
+  tmode=m;
+  ['oc','sc','scf'].forEach(k=>$('t_'+k).classList.toggle('on',k===m));
+  $('tsrow').style.display=m==='scf'?'none':'';
+  $('ts').value=100;drawTest();tupd();lg('test_mode',m);
+}
+function coil2(x){
+  let s=`<rect x="${x-32}" y="185" width="64" height="100" rx="5" fill="url(#cu2)" stroke="#7c2d12" stroke-width="1.5"/>`;
+  for(let k=0;k<10;k++)s+=`<path d="M${x-32} ${195+k*9.5}L${x+32} ${190+k*9.5}" stroke="#7c2d12" stroke-opacity=".5" stroke-width="1.5"/>`;
+  return s;
+}
+function ins(x,y,l,c,id,side){
+  let s=`<circle cx="${x}" cy="${y}" r="22" fill="#fff" stroke="${c}" stroke-width="3"/>`+tx(x,y+6,l,'',c,18);
+  if(id){
+    const bw=TS>1?88:76,bh=TS>1?26:22,fs=TS>1?17:13;
+    const bx=side==='l'?x-28-bw:x-bw/2,by=side==='l'?y-bh/2:y+28;
+    s+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="4" fill="#0b1220"/><text id="${id}" x="${bx+bw/2}" y="${by+bh-6}" fill="#4ade80" font-size="${fs}" font-weight="700" text-anchor="middle" font-family="monospace">0</text>`;
+  }
+  return s;
+}
+function drawTest(){
+  const oc=tmode==='oc',f=tmode==='scf',VH=num('th'),VL=num('tl'),zp=num('tz');
+  const red='#dc2626';
+  let o=`<defs>
+<linearGradient id="cu2" x1="0" x2="1"><stop offset="0" stop-color="#b45309"/><stop offset=".5" stop-color="#f59e0b"/><stop offset="1" stop-color="#b45309"/></linearGradient>
+<linearGradient id="st2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cbd5e1"/><stop offset=".5" stop-color="#e2e8f0"/><stop offset="1" stop-color="#94a3b8"/></linearGradient></defs>`+
+  `<path fill-rule="evenodd" fill="url(#st2)" stroke="#64748b" stroke-width="1.5" d="M450 140H650V330H450Z M490 175V295H610V175Z"/>`+
+  `<path id="tflux" class="flux" d="M470 158H630V312H470Z"/>`+coil2(470)+coil2(630)+
+  /* primary wiring */
+  W(['60,202','60,100','110,100'])+W(['190,100','228,100'])+W(['272,100','318,100'])+W(['362,100','470,100','470,185'])+
+  W(['60,258','60,360','470,360','470,285'])+
+  W(['400,100','400,208'])+W(['400,252','400,360'])+
+  `<circle cx="400" cy="100" r="3.5" fill="#334155"/><circle cx="400" cy="360" r="3.5" fill="#334155"/>`;
+  /* secondary side: the SC test and the fault use IDENTICAL wiring */
+  if(oc){
+    o+=W(['630,185','630,100','700,100'])+W(['630,285','630,360','700,360'])+
+    `<circle cx="700" cy="100" r="6" fill="#fff" stroke="#334155" stroke-width="2.5"/><circle cx="700" cy="360" r="6" fill="#fff" stroke="#334155" stroke-width="2.5"/>`+
+    lab(720,226,'Open terminals','middle','#64748b',12)+
+    `<rect x="660" y="238" width="120" height="${TS>1?28:24}" rx="4" fill="#0b1220"/><text id="rvo" x="720" y="${TS>1?259:255}" fill="#4ade80" font-size="${TS>1?17:13}" font-weight="700" text-anchor="middle" font-family="monospace">0</text>`;
+  }else{
+    o+=W(['630,185','630,100','720,100','720,208'])+W(['720,252','720,360','630,360','630,285'])+
+    `<circle cx="720" cy="100" r="3.5" fill="#334155"/>`;
+  }
+  /* current-flow animation */
+  const hot=f?' hot':'';
+  o+=`<polyline class="cf${hot}" points="60,202 60,100 470,100 470,185"/><polyline class="cf${hot}" points="470,285 470,360 60,360 60,258"/>`;
+  if(!oc)o+=`<polyline class="cf${hot}" points="630,185 630,100 720,100 720,208"/><polyline class="cf${hot}" points="720,252 720,360 630,360 630,285"/>`;
+  /* source + variac (its setting is the ONLY difference between SC test and fault) */
+  const vc=f?red:'#334155',vEnd=oc?'178,90':f?'178,90':'134,106';
+  o+=`<circle cx="60" cy="230" r="28" fill="#fff" stroke="#334155" stroke-width="2.5"/><path d="M46 230q7-16 14 0t14 0" fill="none" stroke="#2563eb" stroke-width="2.5"/>`+
+  lab(72,300,'AC SUPPLY','start')+
+  `<rect x="110" y="84" width="80" height="32" rx="5" fill="#fff" stroke="${vc}" stroke-width="${f?3.5:2.5}"/><polyline points="122,110 ${vEnd}" stroke="${f?red:'#2563eb'}" stroke-width="2.5"/>`+
+  lab(150,72,oc?'VARIAC':f?'VARIAC 100%':`VARIAC ≈ ${fmt(zp)}%`,'middle',f?red:'#64748b',11)+
+  ins(250,100,'A','#dc2626','ra')+lab(250,62,'AMMETER')+
+  ins(340,100,'W','#7c3aed','rw')+lab(340,42,'WATTMETER')+
+  ins(400,230,'V','#2563eb','rv','l')+lab(328,208,'VOLTMETER');
+  if(!oc)o+=ins(720,230,'A','#dc2626','r2')+lab(795,388,'LV shorted through ammeter','end','#dc2626',12);
+  if(f)o+=tx(745,178,'⚡','','#f59e0b',24)+tx(795,26,'FAULT: full V on shorted winding','','#dc2626',13,'end');
+  o+=tx(250,388,oc?`Supply side: LV winding (${fmt(VL)} V)`:f?`Supply: FULL ${fmt(VH)} V on HV winding`:`Supply side: HV winding (${fmt(VH)} V rated)`,'',f?red:'#334155',13);
+  if(oc)o+=tx(620,388,`Open side: HV winding (${fmt(VH)} V)`,'','#334155',13);
+  $('tsvg').innerHTML=o;
+}
+function tvals(){
+  const S=num('tk')*1000,VH=num('th')||1,VL=num('tl')||1,Pi=num('tpi'),Pc=num('tpc'),Z=Math.max(num('tz'),.01)/100,i0=num('ti')/100;
+  let s=+$('ts').value/100;
+  const IH=S/VH,IL=S/VL;let V,I,Wt;
+  if(tmode==='oc'){V=s*VL;I=i0*IL*(s+2.5*Math.pow(Math.max(0,s-1),2));Wt=Pi*s*s}
+  else if(tmode==='sc'){V=s*Z*VH;I=s*IH;Wt=s*s*Pc}
+  else{s=1;V=VH;I=IH/Z;Wt=Pc/(Z*Z)}
+  return{V,I,W:Wt,s,VH,VL,IH,IL,Z,Pc};
+}
+function tupd(){
+  const d=tvals(),oc=tmode==='oc',f=tmode==='scf',k=d.VH/d.VL,full=Math.round(d.s*100)===100;
+  $('tsl').textContent=oc?`Applied voltage: ${Math.round(d.s*100)}% of rated (${fmt(d.V)} V)`:`Current: ${Math.round(d.s*100)}% of rated (${fmt(d.I)} A)`;
+  setT('rv',fmt(d.V)+' V');setT('ra',fmt(d.I)+' A');setT('rw',fmt(d.W)+' W');
+  setT('rvo',fmt(d.V*k)+' V');setT('r2',fmt(d.I*k)+' A');
+  const cs=d.V*d.I>1e-9?Math.min(1,d.W/(d.V*d.I)):NaN;
+  const ok='<span class="chip" style="background:#d1fae5;color:#065f46">✓ ',bad='<span class="chip r">⚠ ';
+  let ch,m;
+  $('tres').classList.toggle('fault',f);
+  if(oc){
+    ch='<span class="chip">OC test → finds IRON loss</span><span class="chip o">Flux ∝ voltage, so W₀ ∝ V²</span>'+(full?ok+'Rated voltage: W₀ = iron loss</span>':'')+(d.s>1?bad+'Core saturating: I₀ rises fast</span>':'');
+    m=[['Applied V (LV)',fmt(d.V)+' V'],['No-load I₀',fmt(d.I)+' A'],['Input W₀',fmt(d.W)+' W'],['cosφ₀',fmt(cs)],['HV open-circuit V',fmt(d.V*k)+' V']];
+    const Iw=d.I*cs,Im=d.I*Math.sqrt(Math.max(1-cs*cs,0));
+    rows('tres',[['cosφ₀ = W₀ / (V₀I₀)',fmt(cs)],['I<sub>w</sub> = I₀cosφ₀',fmt(Iw)+' A'],['I<sub>μ</sub> = I₀sinφ₀',fmt(Im)+' A'],
+       ['R₀ = V₀ / I<sub>w</sub> (LV side)',fmt(d.V/Iw)+' Ω'],['X₀ = V₀ / I<sub>μ</sub> (LV side)',fmt(d.V/Im)+' Ω'],
+       ['R₀, X₀ referred to HV',fmt(d.V/Iw*k*k)+' Ω, '+fmt(d.V/Im*k*k)+' Ω'],['Iron loss at rated voltage',fmt(d.s>0?d.W/(d.s*d.s):NaN)+' W']]);
+    $('tcap').textContent='Normalised to rated voltage: I₀ rises faster than V once the core saturates, while W₀ rises as V².';
+    $('tflux').style.opacity=.25+.75*Math.min(d.s/1.2,1);
+  }else if(!f){
+    ch='<span class="chip">SC test → finds COPPER loss</span><span class="chip o">Tiny flux, so iron loss is negligible</span>'+(full?ok+'Rated current: W<sub>sc</sub> = full-load Cu loss</span>':'')+(d.s>1?bad+'Above rated current: avoid overheating</span>':'');
+    m=[['Applied V<sub>sc</sub> (HV)',fmt(d.V)+' V'],['Short-circuit I<sub>sc</sub>',fmt(d.I)+' A'],['Input W<sub>sc</sub>',fmt(d.W)+' W'],['V<sub>sc</sub> as % of rated',fmt(d.V/d.VH*100)+'%'],['LV shorted current',fmt(d.I*k)+' A']];
+    const Re=d.W/(d.I*d.I),Ze=d.V/d.I,Xe=Math.sqrt(Math.max(Ze*Ze-Re*Re,0));
+    rows('tres',[['R<sub>e</sub> = W<sub>sc</sub> / I<sub>sc</sub>² (HV side)',fmt(Re)+' Ω'],['Z<sub>e</sub> = V<sub>sc</sub> / I<sub>sc</sub> (HV side)',fmt(Ze)+' Ω'],['X<sub>e</sub> = √(Z<sub>e</sub>² − R<sub>e</sub>²)',fmt(Xe)+' Ω'],
+       ['R<sub>e</sub>, X<sub>e</sub> referred to LV',fmt(Re/(k*k))+' Ω, '+fmt(Xe/(k*k))+' Ω'],['%Z = Z<sub>e</sub>I<sub>rated</sub> / V<sub>rated</sub>',fmt(Ze*d.IH/d.VH*100)+'%'],
+       ['Copper loss at full load',fmt(d.s>0?d.W/(d.s*d.s):NaN)+' W']]);
+    $('tcap').textContent='Normalised to rated current: V_sc is linear in I, while W_sc rises as I².';
+    $('tflux').style.opacity=.12;
+  }else{
+    const xr=1/d.Z;
+    ch=bad+'FAULT: same wiring as the SC test, but full rated voltage</span><span class="chip o">Current ≈ '+fmt(xr)+'× rated</span><span class="chip o">Copper heating ≈ '+fmt(xr*xr)+'× rated</span><span class="chip r">Protection must trip at once</span>';
+    m=[['Applied V (HV)',fmt(d.V)+' V (100%)'],['Fault current (HV)',fmt(d.I)+' A'],['Copper heating',fmt(d.W)+' W'],['× rated current',fmt(xr)+'×'],['LV shorted current',fmt(d.I*k)+' A']];
+    $('tres').innerHTML=`<p><b>Same wiring. Only the Variac setting differs.</b></p>
+<table class="cmp"><tr><th></th><th>SC test<br>(Variac low)</th><th>Same wiring,<br>full voltage</th></tr>
+<tr><td>Applied voltage</td><td>${fmt(d.Z*d.VH)} V (${fmt(d.Z*100)}%)</td><td class="bad">${fmt(d.VH)} V (100%)</td></tr>
+<tr><td>HV current</td><td>${fmt(d.IH)} A (1× rated)</td><td class="bad">${fmt(d.I)} A (${fmt(xr)}×)</td></tr>
+<tr><td>Copper heating</td><td>${fmt(d.Pc)} W</td><td class="bad">${fmt(d.W)} W</td></tr>
+<tr><td>Core flux</td><td>Very small</td><td class="bad">About half of normal</td></tr>
+<tr><td>Result</td><td class="ok">Safe measurement</td><td class="bad">Fault, protection must trip</td></tr></table>`;
+    $('tcap').textContent='Log scale. The SC test and the fault use the same wiring. Only the applied voltage differs.';
+    $('tflux').style.opacity=.45;
+  }
+  $('tchips').innerHTML=ch;mets('tmeters',m);
+  const frac=oc?d.I/d.IL:f?1.3:d.s;
+  $('tsvg').style.setProperty('--d',(1.6/(.15+Math.min(frac,1.3)))+'s');
+  $('tsvg').style.setProperty('--o',d.s>0?1:0);
+}
+function testChart(){
+  if(tmode==='scf')return faultChart();
+  const[x,w,h]=fit($('tch')),oc=tmode==='oc',s=+$('ts').value/100;
+  x.fillStyle='#0b1220';x.fillRect(0,0,w,h);
+  const pl=40,pw=w-pl-12,ph=h-38,X=v=>pl+v/1.2*pw,Y=v=>12+ph*(1-v/1.6);
+  x.font='11px Segoe UI';x.strokeStyle='#1c2a46';x.lineWidth=1;x.fillStyle='#94a3b8';
+  [0,.4,.8,1.2,1.6].forEach(v=>{x.beginPath();x.moveTo(pl,Y(v));x.lineTo(w-12,Y(v));x.stroke();x.fillText(Math.round(v*100)+'%',2,Y(v)+4)});
+  [0,.25,.5,.75,1,1.2].forEach(v=>x.fillText(Math.round(v*100)+'%',X(v)-12,h-22));
+  x.fillText(oc?'Applied voltage (% of rated)':'Current (% of rated)',pl+pw/2-60,h-6);
+  x.strokeStyle='#facc15';x.setLineDash([5,4]);x.beginPath();x.moveTo(X(1),12);x.lineTo(X(1),12+ph);x.stroke();x.setLineDash([]);
+  const f1=v=>oc?v+2.5*Math.pow(Math.max(0,v-1),2):v,f2=v=>v*v;
+  [[f1,'#22d3ee'],[f2,'#fb923c']].forEach(([f,c])=>{
+    x.strokeStyle=c;x.lineWidth=2.4;x.beginPath();
+    for(let i=0;i<=120;i++){const v=i/100;i?x.lineTo(X(v),Y(f(v))):x.moveTo(X(v),Y(f(v)))}x.stroke();
+    x.fillStyle='#fff';x.beginPath();x.arc(X(s),Y(f(s)),5,0,7);x.fill();
+  });
+  x.font='12px Segoe UI';
+  x.fillStyle='#22d3ee';x.fillText(oc?'I₀ (saturates above rated V)':'V_sc ∝ I',pl+8,28);
+  x.fillStyle='#fb923c';x.fillText(oc?'W₀ ∝ V² (iron loss)':'W_sc ∝ I² (copper loss)',pl+8,44);
+}
+/* SC test vs fault on a log scale (% of rated) */
+function faultChart(){
+  const[x,w,h]=fit($('tch')),d=tvals();
+  x.fillStyle='#0b1220';x.fillRect(0,0,w,h);
+  const pl=92,pr=14,pw=w-pl-pr,L0=1,L1=5.35,X=v=>pl+(Math.log10(Math.max(v,10))-L0)/(L1-L0)*pw;
+  x.font='11px Segoe UI';x.textAlign='center';
+  [10,100,1e3,1e4,1e5].forEach(v=>{x.strokeStyle='#1c2a46';x.beginPath();x.moveTo(X(v),10);x.lineTo(X(v),h-30);x.stroke();
+    x.fillStyle='#94a3b8';x.fillText(v>=1e3?(v/1e3)+'k%':v+'%',X(v),h-16)});
+  x.fillText('% of rated value (log scale)',pl+pw/2,h-3);x.textAlign='left';
+  x.strokeStyle='#facc15';x.setLineDash([5,4]);x.beginPath();x.moveTo(X(100),10);x.lineTo(X(100),h-30);x.stroke();x.setLineDash([]);
+  const xr=1/d.Z,groups=[['Current',100,100*xr],['Cu heating',100,100*xr*xr]];
+  const gh=(h-50)/2;
+  groups.forEach(([name,a,b],i)=>{
+    const y0=14+i*gh;
+    x.fillStyle='#cbd5e1';x.font='bold 12px Segoe UI';x.fillText(name,6,y0+gh/2);
+    x.fillStyle='#22c55e';x.fillRect(pl,y0+4,X(a)-pl,gh*.32);
+    x.fillStyle='#ef4444';x.fillRect(pl,y0+8+gh*.32,X(b)-pl,gh*.32);
+    x.font='11px Segoe UI';x.fillStyle='#fff';
+    x.fillText('SC test '+fmt(a)+'%',Math.min(X(a)+4,w-110),y0+4+gh*.24);
+    const lb='Fault '+fmt(b)+'%';x.fillText(lb,Math.min(X(b)+4,w-x.measureText(lb).width-4),y0+8+gh*.56);
+  });
+}
+
+/* ================= Canvas helpers ================= */
+let T=0,FR=0;
+function fit(c){const r=devicePixelRatio||1,w=c.clientWidth||800,h=+c.dataset.h;if(c.width!==Math.round(w*r)){c.width=w*r;c.height=h*r}const x=c.getContext('2d');x.setTransform(r,0,0,r,0,0);return[x,w,h]}
+function scope(id){const[x,w,h]=fit($(id));x.fillStyle='#0b1220';x.fillRect(0,0,w,h);x.strokeStyle='#1c2a46';x.lineWidth=1;
+  for(let i=0;i<=10;i++){x.beginPath();x.moveTo(w*i/10,0);x.lineTo(w*i/10,h);x.stroke()}
+  for(let j=0;j<=4;j++){x.beginPath();x.moveTo(0,h*j/4);x.lineTo(w,h*j/4);x.stroke()}
+  x.strokeStyle='#3b4a6b';x.beginPath();x.moveTo(0,h/2);x.lineTo(w,h/2);x.stroke();return[x,w,h]}
+function trace(x,w,h,f,c,dash){x.strokeStyle=c;x.lineWidth=2.2;x.setLineDash(dash||[]);x.beginPath();
+  for(let i=0;i<=w;i+=2){const y=h/2-f(i/w*4*Math.PI)*h*.38;i?x.lineTo(i,y):x.moveTo(i,y)}x.stroke();x.setLineDash([])}
+function arrow(x,cx,cy,r,ang,c,l){
+  const ex=cx+r*Math.cos(ang),ey=cy-r*Math.sin(ang),p=-ang;
+  x.strokeStyle=x.fillStyle=c;x.lineWidth=2.4;x.beginPath();x.moveTo(cx,cy);x.lineTo(ex,ey);x.stroke();
+  x.beginPath();x.moveTo(ex,ey);x.lineTo(ex-11*Math.cos(p-.4),ey-11*Math.sin(p-.4));x.lineTo(ex-11*Math.cos(p+.4),ey-11*Math.sin(p+.4));x.fill();
+  x.font='bold 13px Segoe UI';x.fillText(l,cx+(r+16)*Math.cos(ang)-6,cy-(r+16)*Math.sin(ang)+4)}
+const eta=(l,S,Pi,Pc,pf)=>{const o=l*S*1000*pf;return o/(o+Pi+l*l*Pc)*100};
+
+function effChart(){
+  const[x,w,h]=scope('eff'),S=num('ek'),Pi=num('ei'),Pc=num('ec')||.001,pf=num('ep'),L=+$('ld').value;
+  x.fillStyle='#0b1220';x.fillRect(0,0,w,h);
+  const pl=40,pw=w-pl-12,ph=h-36,X=l=>pl+l/150*pw,Y=e=>12+ph*(1-e/100);
+  x.font='11px Segoe UI';x.fillStyle='#94a3b8';x.strokeStyle='#1c2a46';
+  [0,25,50,75,100].forEach(e=>{x.beginPath();x.moveTo(pl,Y(e));x.lineTo(w-12,Y(e));x.stroke();x.fillText(e+'%',4,Y(e)+4)});
+  [0,50,100,150].forEach(l=>x.fillText(l+'% load',X(l)-18,h-8));
+  const xm=Math.sqrt(Pi/Pc)*100;
+  x.strokeStyle='#facc15';x.setLineDash([5,4]);x.beginPath();x.moveTo(X(xm),12);x.lineTo(X(xm),12+ph);x.stroke();x.setLineDash([]);
+  x.fillStyle='#facc15';x.fillText('max η at '+fmt(xm)+'%',X(xm)+6,26);
+  x.strokeStyle='#22d3ee';x.lineWidth=2.4;x.beginPath();
+  for(let l=0;l<=150;l++){const e=eta(l/100,S,Pi,Pc,pf);l?x.lineTo(X(l),Y(e)):x.moveTo(X(l),Y(e))}x.stroke();
+  const e=eta(L/100,S,Pi,Pc,pf);x.fillStyle='#fff';x.beginPath();x.arc(X(L),Y(e),6,0,7);x.fill();
+  x.fillText('η = '+fmt(e)+'%',Math.min(X(L)+10,w-70),Y(e)+16);
+}
+
+function loop(){
+  T+=.02;FR++;
+  if(!document.hidden&&$('sim').classList.contains('active')){
+    const b=Math.abs(Math.cos(T*3));
+    const f='brightness('+(.75+.5*b)+')'+(mode==='short'?' drop-shadow(0 0 6px #ef4444)':'');
+    document.querySelectorAll('.cp,.cs').forEach(e=>e.style.filter=f);
+    const V1=num('v1'),V2=mode==='short'?0:V1*num('n2')/(num('n1')||1),m=Math.max(V1,V2)||1;
+    const phi=mode==='load'?0:mode==='open'?1.36:1.25;
+    /* I1 drawn to scale relative to rated current (rated = 0.45 of height) */
+    const L=+$('ld').value,Z1=Math.max(num('zp'),.01)/100;
+    const r=mode==='load'?L/100:mode==='open'?num('i0p')/100:1/Z1,amp=Math.min(.45*r,1.2);
+    const clip=v=>v; /* fault current is drawn just beyond the grid and labelled off scale, keeping its sine shape */
+    let[x,w,h]=scope('wave');
+    trace(x,w,h,a=>V1/m*Math.sin(a-T*3),'#22d3ee');trace(x,w,h,a=>V2/m*Math.sin(a-T*3),'#fb923c');
+    trace(x,w,h,a=>(mode==='short'?.3:.6)*Math.sin(a-T*3-Math.PI/2),'#34d399',[6,4]);
+    trace(x,w,h,a=>clip(amp*Math.sin(a-T*3-phi)),'#facc15');
+    x.font='bold 12px Segoe UI';
+    if(mode==='short'){x.fillStyle='#f87171';x.fillText('I₁ OFF SCALE: '+fmt(r)+'× rated',8,16)}
+    else if(mode==='open'){x.fillStyle='#facc15';x.fillText('I₁ = I₀, only '+fmt(r*100)+'% of rated',8,16)}
+    else{x.fillStyle='#facc15';x.fillText('I₁ = '+fmt(L)+'% of rated',8,16)}
+    [x,w,h]=scope('ph');const cx=w/2,cy=h/2,R=Math.min(w,h)*.36;
+    x.strokeStyle='#1c2a46';x.beginPath();x.arc(cx,cy,R,0,7);x.stroke();
+    arrow(x,cx,cy,R,T,'#22d3ee','V₁');arrow(x,cx,cy,mode==='short'?R*.5:R,T+Math.PI,'#f87171','E₁');
+    arrow(x,cx,cy,mode==='short'?R*.4:R*.8,T-Math.PI/2,'#34d399','Φ');
+    if(mode!=='short')arrow(x,cx,cy,R*.45,T-1.3,'#facc15',mode==='open'?'I₀ = I₁':'I₀');
+    if(mode==='load')arrow(x,cx,cy,R*.62,T,'#fb923c','I₁');
+    if(mode==='short')arrow(x,cx,cy,R*.95,T-1.25,'#fb923c','I_sc');
+    if(FR%6===0){effChart();testChart();}
+  }
+  requestAnimationFrame(loop);
+}
+
+/* ================= PAGE 2 ================= */
+function c1(){const V1=num('a1'),N1=num('a2')||1,N2=num('a3'),S=num('a4'),K=N2/N1,V2=V1*K;
+  rows('o1',[['Transformation ratio K',fmt(K)],['Secondary voltage V₂',fmt(V2)+' V'],['Primary current I₁',fmt(S*1000/V1)+' A'],['Secondary current I₂',fmt(S*1000/V2)+' A'],['Type',K>1?'Step-up':K<1?'Step-down':'Isolation']])}
+function c2(){const f=num('b1'),N=num('b2'),ph=num('b3')*num('b4')*1e-4;
+  rows('o2',[['Maximum flux Φ<sub>m</sub>',fmt(ph*1000)+' mWb'],['EMF per turn',fmt(4.44*f*ph)+' V'],['Induced EMF E',fmt(4.44*f*N*ph)+' V']])}
+function c3(){const S=num('c1k'),Pi=num('c2k'),Pc=num('c3k')||.001,x=num('c4k')/100,pf=num('c5k'),R=num('c6k'),X=num('c7k'),xm=Math.sqrt(Pi/Pc),sn=Math.sqrt(1-pf*pf);
+  rows('o3',[['Efficiency at this load',fmt(eta(x,S,Pi,Pc,pf))+'%'],['Total losses',fmt(Pi+x*x*Pc)+' W'],['Load for max efficiency',fmt(xm*100)+'% ('+fmt(xm*S)+' kVA)'],
+   ['Maximum efficiency',fmt(eta(xm,S,Pi,Pc,pf))+'%'],['Regulation (lagging)',fmt(x*(R*pf+X*sn))+'%'],['Regulation (leading)',fmt(x*(R*pf-X*sn))+'%']])}
+function c4(){const V0=num('d1'),I0=num('d2'),W0=num('d3'),Vs=num('d4'),Is=num('d5'),Ws=num('d6'),
+  c=W0/(V0*I0),Iw=I0*c,Im=I0*Math.sqrt(Math.max(1-c*c,0)),Re=Ws/(Is*Is),Ze=Vs/Is,Xe=Math.sqrt(Math.max(Ze*Ze-Re*Re,0));
+  rows('o4',[['No-load power factor cosφ₀',fmt(c)],['I<sub>w</sub> / I<sub>μ</sub>',fmt(Iw)+' A / '+fmt(Im)+' A'],['R₀ = V₀ / I<sub>w</sub>',fmt(V0/Iw)+' Ω'],['X₀ = V₀ / I<sub>μ</sub>',fmt(V0/Im)+' Ω'],
+   ['R<sub>e</sub> = W<sub>sc</sub> / I<sub>sc</sub>²',fmt(Re)+' Ω'],['Z<sub>e</sub> = V<sub>sc</sub> / I<sub>sc</sub>',fmt(Ze)+' Ω'],['X<sub>e</sub>',fmt(Xe)+' Ω']])}
+
+function openTab(id,b){
+  document.querySelectorAll('.tab-content').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('active'));
+  $(id).classList.add('active');b.classList.add('active');tab=id;lg('page',id);
+}
+/* redraw diagrams if the screen size class changes (e.g. phone rotated) */
+let rzT;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{const n=calcTS();if(n!==TS){TS=n;drawTr();upd();drawTest();tupd()}},200)});
+
+if(LOG.sid)$('sid').value=LOG.sid;setT('lgn',LOG.rows.length);
+drawTr();upd();drawTest();tupd();c1();c2();c3();c4();
+lg(LOG.rows.length?'reload':'start','device',devInfo());
+loop();
+</script>
+</body>
+</html>
